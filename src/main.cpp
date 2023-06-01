@@ -3,6 +3,8 @@
 #include <vector>
 #include <ctime>
 
+#include <hash.hpp>
+
 // Block structure
 struct Block {
     int blockNumber;
@@ -38,10 +40,16 @@ public:
     }
 
     std::string calculateHash(Block& block) {
+        // Initialize block header data
+        std::string headerData = std::to_string(block.blockNumber) + block.previousHash + std::to_string(block.timestamp);
+
+        // Concatenate transaction data
+        for (const std::string& transaction : block.transactions) {
+            headerData += transaction;
+        }
+
         // Implement hash calculation
-        // Need to find a suitable library
-        // For now, just return a temporary value
-        return "hash";
+        return sha256(headerData);
     }
 
     void addBlock(Block& block) {
@@ -108,7 +116,7 @@ int main() {
 
     // Output the genesis block
     Block genesisBlock = blockchain.getLastBlock();
-    std::cout << "Genesis block: " << genesisBlock.blockNumber << std::endl;
+    std::cout << "Genesis block: " << genesisBlock.hash << std::endl;
 
     // Create a new block
     Block newBlock;
@@ -124,5 +132,5 @@ int main() {
 
     // Output the new block
     Block lastBlock = blockchain.getLastBlock();
-    std::cout << "New block: " << lastBlock.blockNumber << std::endl;
+    std::cout << "block " << lastBlock.blockNumber << ": " << lastBlock.hash << std::endl;
 }

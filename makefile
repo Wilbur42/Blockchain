@@ -22,10 +22,9 @@ build: $(OBJS) link
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 	@ echo !==== COMPILING $^
 # @ mkdir $(@D)
-	$(CC) $(C_FLAGS) -c ./$^ -o ./$@ -I./$(INC_DIR)/
-
+	$(CC) $(C_FLAGS) -c ./$^ -o ./$@  -I./$(INC_DIR)/ -I$(OPENSSL_INCLUDE_DIR) -L$(OPENSSL_LIB_DIR) -lssl -lcrypto
 link:
-	$(LD) -o $(BUILD_DIR)/$(OUTPUT) $(OBJS) $(LD_FLAGS)
+	$(LD) -o $(BUILD_DIR)/$(OUTPUT) $(OBJS) -I$(OPENSSL_INCLUDE_DIR) -L$(OPENSSL_LIB_DIR) $(LD_FLAGS) -lssl -lcrypto
 
 clean:
 	del /S /F /Q .\$(OBJ_DIR)\*
