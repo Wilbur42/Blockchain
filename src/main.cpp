@@ -6,12 +6,21 @@
 
 #include <hash.hpp>
 
+// Transaction structure
+struct Transaction {
+    std::string sender;
+    std::string recipient;
+    double amount;
+    std::time_t timestamp;
+    std::string signature;
+};
+
 // Block structure
 struct Block {
     int blockNumber;
     std::string previousHash;
     std::time_t timestamp;
-    std::vector<std::string> transactions;
+    std::vector<Transaction> transactions;
     std::string hash;
 };
 
@@ -34,7 +43,7 @@ public:
         genesisBlock.blockNumber = 0;
         genesisBlock.previousHash = "0";
         genesisBlock.timestamp = std::time(nullptr);
-        genesisBlock.transactions.push_back("Genesis transaction");
+        genesisBlock.transactions.push_back(createTransaction("Genesis", "Genesis", 0.0));
         genesisBlock.hash = calculateHash(genesisBlock);
 
         chain.push_back(genesisBlock);
@@ -45,8 +54,8 @@ public:
         std::string headerData = std::to_string(block.blockNumber) + block.previousHash + std::to_string(block.timestamp);
 
         // Concatenate transaction data
-        for (const std::string& transaction : block.transactions) {
-            headerData += transaction;
+        for (const Transaction& transaction : block.transactions) {
+            headerData += transaction.sender + transaction.recipient + std::to_string(transaction.amount) + std::to_string(transaction.timestamp);;
         }
 
         // Implement hash calculation
@@ -95,6 +104,7 @@ public:
     const Block& getLastBlock() const {
         return chain.back();
     }
+
 
     // Proof of Stake (PoS) related functions
 
@@ -169,6 +179,35 @@ public:
         // Block is valid, add it to the chain
         chain.push_back(block);
     }
+
+
+    // Transaction handling
+
+    Transaction createTransaction(const std::string& sender, const std::string& recipient, double amount) {
+        // Create a new transaction
+        Transaction transaction;
+        transaction.sender = sender;
+        transaction.recipient = recipient;
+        transaction.amount = amount;
+        transaction.timestamp = std::time(nullptr);
+        transaction.signature = signTransaction(transaction);
+
+        return transaction;
+    }
+
+    std::string signTransaction(const Transaction& transaction) {
+        // Implement transaction signing logic
+
+        // Temporary placeholder
+        return "Signature";
+    }
+
+    bool verifyTransactionSignature(const Transaction& transaction) {
+        // Implement transaction signature verification logic
+
+        // Temporary placeholder
+        return transaction.signature == "Signature";
+    }
 };
 
 int main() {
@@ -184,8 +223,8 @@ int main() {
     newBlock.blockNumber = 1;
     newBlock.previousHash = genesisBlock.hash;
     newBlock.timestamp = std::time(nullptr);
-    newBlock.transactions.push_back("Transaction 1");
-    newBlock.transactions.push_back("Transaction 2");
+    newBlock.transactions.push_back(blockchain.createTransaction("Jeff", "Bob", 10.0));
+    newBlock.transactions.push_back(blockchain.createTransaction("Jim", "Charlie", 5.1));
     newBlock.hash = blockchain.calculateHash(newBlock);
 
     // Add the new block to the chain
@@ -194,6 +233,8 @@ int main() {
     // Output the new block
     const Block& lastBlock = blockchain.getLastBlock();
     std::cout << "Block " << lastBlock.blockNumber << ": " << lastBlock.hash << std::endl;
+    std::cout << "Transaction 1 " << lastBlock.transactions[0].amount << std::endl;
+    std::cout << "Transaction 2 " << lastBlock.transactions[1].amount << std::endl;
 
     // Create a new validator
     Validator validator;
