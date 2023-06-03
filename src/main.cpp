@@ -4,7 +4,7 @@
 #include <ctime>
 #include <random>
 
-#include <hash.hpp>
+#include <cryptography.hpp>
 
 // Transaction structure
 struct Transaction {
@@ -13,6 +13,7 @@ struct Transaction {
     double amount;
     std::time_t timestamp;
     std::string signature;
+    std::string validator;
 };
 
 // Block structure
@@ -26,8 +27,11 @@ struct Block {
 
 // Validator structure
 struct Validator {
+    // friend class Blockchain;
     std::string publicKey;
     int stake;
+// protected:
+    std::string privateKey;
 };
 
 // Blockchain class
@@ -43,7 +47,6 @@ public:
         genesisBlock.blockNumber = 0;
         genesisBlock.previousHash = "0";
         genesisBlock.timestamp = std::time(nullptr);
-        genesisBlock.transactions.push_back(createTransaction("Genesis", "Genesis", 0.0));
         genesisBlock.hash = calculateHash(genesisBlock);
 
         chain.push_back(genesisBlock);
@@ -183,30 +186,45 @@ public:
 
     // Transaction handling
 
-    Transaction createTransaction(const std::string& sender, const std::string& recipient, double amount) {
+    Transaction createTransaction(const std::string& sender, const std::string& recipient, double amount, const Validator& validator) {
+        // select a validator
+        // const Validator& validator = selectValidator();
+
+        std::cout << "Selected validator: " << validator.privateKey << std::endl;
+
         // Create a new transaction
         Transaction transaction;
         transaction.sender = sender;
         transaction.recipient = recipient;
         transaction.amount = amount;
         transaction.timestamp = std::time(nullptr);
-        transaction.signature = signTransaction(transaction);
+        transaction.signature = signTransaction(transaction, validator.privateKey);
+        transaction.validator = validator.publicKey;
 
         return transaction;
     }
 
-    std::string signTransaction(const Transaction& transaction) {
-        // Implement transaction signing logic
+    std::string signTransaction(const Transaction& transaction, const std::string& privateKey) {
+        // Concatenate transaction data
+        std::string headerData = transaction.sender + transaction.recipient + std::to_string(transaction.amount) + std::to_string(transaction.timestamp);
 
-        // Temporary placeholder
-        return "Signature";
+        std::cout << "Header data: " << headerData << std::endl;
+        std::cout << "Private key: " << privateKey << std::endl;
+
+        // Implement Eliptical Curve Digital Signature Algorithm (ECDSA)
+        std::string signature = signData(headerData, privateKey);
+
+        return signature;
     }
 
-    bool verifyTransactionSignature(const Transaction& transaction) {
-        // Implement transaction signature verification logic
+    bool verifyTransactionSignature(const Transaction& transaction, const std::string& publicKey) {
+        // Concatenate transaction data
+        std::string headerData = transaction.sender + transaction.recipient + std::to_string(transaction.amount) + std::to_string(transaction.timestamp);
 
-        // Temporary placeholder
-        return transaction.signature == "Signature";
+        // Implement transaction signature verification logic
+        bool isValid = verifyDataSignature(headerData, publicKey, transaction.signature);
+
+        return isValid;
     }
 };
 
@@ -218,27 +236,10 @@ int main() {
     const Block& genesisBlock = blockchain.getLastBlock();
     std::cout << "Genesis block: " << genesisBlock.hash << std::endl;
 
-    // Create a new block
-    Block newBlock;
-    newBlock.blockNumber = 1;
-    newBlock.previousHash = genesisBlock.hash;
-    newBlock.timestamp = std::time(nullptr);
-    newBlock.transactions.push_back(blockchain.createTransaction("Jeff", "Bob", 10.0));
-    newBlock.transactions.push_back(blockchain.createTransaction("Jim", "Charlie", 5.1));
-    newBlock.hash = blockchain.calculateHash(newBlock);
-
-    // Add the new block to the chain
-    blockchain.addBlock(newBlock);
-
-    // Output the new block
-    const Block& lastBlock = blockchain.getLastBlock();
-    std::cout << "Block " << lastBlock.blockNumber << ": " << lastBlock.hash << std::endl;
-    std::cout << "Transaction 1 " << lastBlock.transactions[0].amount << std::endl;
-    std::cout << "Transaction 2 " << lastBlock.transactions[1].amount << std::endl;
-
     // Create a new validator
     Validator validator;
     validator.publicKey = "publicKey";
+    validator.privateKey = "privateKey";
     validator.stake = 100;
 
     // Add the validator to the network
@@ -247,6 +248,7 @@ int main() {
     // Create a second validator
     Validator validator2;
     validator2.publicKey = "publicKey2";
+    validator2.privateKey = "privateKey2";
     validator2.stake = 200;
 
     // Add the second validator to the network
@@ -257,6 +259,33 @@ int main() {
 
     // Output the selected validator
     std::cout << "Selected validator: " << selectedValidator.publicKey << std::endl;
+
+    // Create a new block
+    Block newBlock;
+    newBlock.blockNumber = 1;
+    newBlock.previousHash = genesisBlock.hash;
+    newBlock.timestamp = std::time(nullptr);
+    newBlock.transactions.push_back(blockchain.createTransaction("Jeff", "Bob", 10.0, selectedValidator));
+    newBlock.transactions.push_back(blockchain.createTransaction("Jim", "Charlie", 5.1, selectedValidator));
+    newBlock.hash = blockchain.calculateHash(newBlock);
+
+    // Add the new block to the chain
+    blockchain.addBlock(newBlock);
+
+    // Output the new block
+    const Block& lastBlock = blockchain.getLastBlock();
+    std::cout << "Block " << lastBlock.blockNumber << ": " << lastBlock.hash << std::endl;
+
+    // Output transaction details
+    const Transaction& transaction1 = lastBlock.transactions[0];
+    std::cout << "Transaction: " << transaction1.sender << " -> " << transaction1.recipient << " (" << transaction1.amount << ")" << std::endl;
+    std::cout << "Signature: " << transaction1.signature << std::endl;
+    std::cout << "Valid: " << blockchain.verifyTransactionSignature(transaction1, transaction1.validator) << std::endl;
+
+    const Transaction& transaction2 = lastBlock.transactions[1];
+    std::cout << "Transaction: " << transaction2.sender << " -> " << transaction2.recipient << " (" << transaction2.amount << ")" << std::endl;
+    std::cout << "Signature: " << transaction2.signature << std::endl;
+    std::cout << "Valid: " << blockchain.verifyTransactionSignature(transaction2, transaction2.validator) << std::endl;
 
     return 0;
 }
