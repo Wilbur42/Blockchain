@@ -186,9 +186,9 @@ public:
 
     // Transaction handling
 
-    Transaction createTransaction(const std::string& sender, const std::string& recipient, double amount, const Validator& validator) {
+    Transaction createTransaction(const std::string& sender, const std::string& recipient, double amount) {
         // select a validator
-        // const Validator& validator = selectValidator();
+        const Validator& validator = selectValidator();
 
         std::cout << "Selected validator: " << validator.privateKey << std::endl;
 
@@ -265,8 +265,8 @@ int main() {
     newBlock.blockNumber = 1;
     newBlock.previousHash = genesisBlock.hash;
     newBlock.timestamp = std::time(nullptr);
-    newBlock.transactions.push_back(blockchain.createTransaction("Jeff", "Bob", 10.0, selectedValidator));
-    newBlock.transactions.push_back(blockchain.createTransaction("Jim", "Charlie", 5.1, selectedValidator));
+    newBlock.transactions.push_back(blockchain.createTransaction("Jeff", "Bob", 10.0));
+    newBlock.transactions.push_back(blockchain.createTransaction("Jim", "Charlie", 5.1));
     newBlock.hash = blockchain.calculateHash(newBlock);
 
     // Add the new block to the chain
