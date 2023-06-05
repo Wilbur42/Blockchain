@@ -27,11 +27,15 @@ struct Block {
 
 // Validator structure
 struct Validator {
-    // friend class Blockchain;
+    friend class Blockchain;
+protected:
+    std::string privateKey;
+public:
     std::string publicKey;
     int stake;
-// protected:
-    std::string privateKey;
+    void OverridePrivateKey(std::string newPrivateKey) {
+        privateKey = newPrivateKey;
+    }
 };
 
 // Blockchain class
@@ -239,7 +243,7 @@ int main() {
     // Create a new validator
     Validator validator;
     validator.publicKey = "publicKey";
-    validator.privateKey = "privateKey";
+    validator.OverridePrivateKey("privateKey");
     validator.stake = 100;
 
     // Add the validator to the network
@@ -248,7 +252,7 @@ int main() {
     // Create a second validator
     Validator validator2;
     validator2.publicKey = "publicKey2";
-    validator2.privateKey = "privateKey2";
+    validator2.OverridePrivateKey("privateKey2");
     validator2.stake = 200;
 
     // Add the second validator to the network
