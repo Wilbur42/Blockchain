@@ -140,7 +140,7 @@ public:
         return true;
     }
 
-    const Validator& selectValidator() const {
+    const Validator& selectRandomValidator() const {
         // Randomly select a validator based on their stake
 
         // Calculate the total stake
@@ -173,7 +173,7 @@ public:
         // Validate the block using PoS consensus rules
 
         // Select a validator
-        const Validator& validator = selectValidator();
+        const Validator& validator = selectRandomValidator();
 
         // Check if the validator is valid
         if (!isValidValidator(validator)) {
@@ -187,12 +187,26 @@ public:
         chain.push_back(block);
     }
 
+   double getValidatorStake(const std::string& publicKey) const {
+        // Get the stake of a validator
+
+        // Iterate over validators
+        for (const Validator& validator : validators) {
+            if (validator.publicKey == publicKey) {
+                return validator.stake;
+            }
+        }
+
+        // Throw an error if the validator is not found
+        throw std::runtime_error("Validator not found");
+    }
+
 
     // Transaction handling
 
     Transaction createTransaction(const std::string& sender, const std::string& recipient, double amount) {
         // select a validator
-        const Validator& validator = selectValidator();
+        const Validator& validator = selectRandomValidator();
 
         std::cout << "Selected validator: " << validator.privateKey << std::endl;
 
@@ -230,6 +244,46 @@ public:
 
         return isValid;
     }
+
+    bool isValidTransaction(const Transaction& transaction) {
+        // Check if the transaction is valid
+
+        // Check if the transaction signature is valid
+        if (!verifyTransactionSignature(transaction, transaction.validator)) {
+            return false;
+        }
+
+        // Check if the sender has enough balance
+        double senderBalance = getValidatorStake(transaction.sender);
+        if (senderBalance < transaction.amount) {
+            return false;
+        }
+
+        // Check amount is positive
+        if (transaction.amount <= 0) {
+            return false;
+        }
+
+        // Check if the transaction is in the past
+        std::time_t currentTime = std::time(nullptr);
+
+        if (transaction.timestamp > currentTime) {
+            return false;
+        }
+
+        // Check for double spending
+        for (const Block& block : chain) {
+            for (const Transaction& t : block.transactions) {
+                if (t.sender == transaction.sender) {
+                    if (t.timestamp > transaction.timestamp) {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        return true;
+    }
 };
 
 int main() {
@@ -259,7 +313,7 @@ int main() {
     blockchain.addValidator(validator2);
 
     // Select a validator
-    const Validator& selectedValidator = blockchain.selectValidator();
+    const Validator& selectedValidator = blockchain.selectRandomValidator();
 
     // Output the selected validator
     std::cout << "Selected validator: " << selectedValidator.publicKey << std::endl;
@@ -284,12 +338,14 @@ int main() {
     const Transaction& transaction1 = lastBlock.transactions[0];
     std::cout << "Transaction: " << transaction1.sender << " -> " << transaction1.recipient << " (" << transaction1.amount << ")" << std::endl;
     std::cout << "Signature: " << transaction1.signature << std::endl;
-    std::cout << "Valid: " << blockchain.verifyTransactionSignature(transaction1, transaction1.validator) << std::endl;
+    std::cout << "Valid Signature: " << blockchain.verifyTransactionSignature(transaction1, transaction1.validator) << std::endl;
+    std::cout << "Valid Transaction: " << blockchain.isValidTransaction(transaction1) << std::endl;
 
     const Transaction& transaction2 = lastBlock.transactions[1];
     std::cout << "Transaction: " << transaction2.sender << " -> " << transaction2.recipient << " (" << transaction2.amount << ")" << std::endl;
     std::cout << "Signature: " << transaction2.signature << std::endl;
-    std::cout << "Valid: " << blockchain.verifyTransactionSignature(transaction2, transaction2.validator) << std::endl;
+    std::cout << "Valid Signature: " << blockchain.verifyTransactionSignature(transaction2, transaction2.validator) << std::endl;
+    std::cout << "Valid Transaction: " << blockchain.isValidTransaction(transaction2) << std::endl;
 
     return 0;
 }
